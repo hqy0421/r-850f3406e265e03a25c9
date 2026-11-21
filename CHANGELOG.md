@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- Add `pdfplumber.ledger`, a ledger-synchronization submodule for revised PDF ledgers. It extracts records with the real table extraction, identifies them by declared business keys instead of page/line numbers, and diffs each incoming full version of a declared range against the currently effective version — emitting additions, updates, and deletions with old/new cell positions. Pure position moves are not treated as content changes; deletions are only recognized when integrity checks pass (key conflicts or missing pages keep the current data); same-version retries do not re-emit changes; late-arriving old versions cannot overwrite newer data. The official snapshot and its change records are committed in a single SQLite transaction, and every record remains traceable to its source PDF (path, SHA-256, page, cell bounding boxes). See [docs/ledger.md](docs/ledger.md).
+
 ## [0.11.10] — 2026-06-14
 
 ### Changed

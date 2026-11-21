@@ -21,6 +21,7 @@ __To report a bug__ or request a feature, please [file an issue](https://github.
 - [Extracting text](#extracting-text)
 - [Extracting tables](#extracting-tables)
 - [Extracting form values](#extracting-form-values)
+- [Syncing ledger versions](#syncing-ledger-versions)
 - [Demonstrations](#demonstrations)
 - [Comparison to other libraries](#comparison-to-other-libraries)
 - [Acknowledgments / Contributors](#acknowledgments--contributors)
@@ -499,6 +500,32 @@ Once you run this script, `form_data` is a list containing a three-element tuple
 ```
 
 *Thanks to [@jeremybmerrill](https://github.com/jeremybmerrill) for helping to maintain the form-parsing code above.*
+
+## Syncing ledger versions
+
+Suppliers often send revised editions of PDF ledgers, and re-pagination makes page/line numbers useless for detecting record changes. The `pdfplumber.ledger` submodule synchronizes such ledgers across versions: it extracts tables with the real table extraction, identifies records by declared business keys, and diffs each incoming full version against the currently effective one — emitting additions, updates, and deletions with old/new cell positions. Pure position moves don't count as changes; deletions are only recognized when integrity checks pass (key conflicts or missing pages keep the current data); same-version retries don't re-emit changes; late old versions can't overwrite newer data. The official snapshot and its change records commit in a single transaction, and every record remains traceable to its source PDF.
+
+```python
+from pdfplumber.ledger import ColumnSpec, LedgerSync, RangeSpec
+
+spec = RangeSpec(
+    name="ap-ledger",
+    key=("supplier", "invoice"),
+    columns=(
+        ColumnSpec("supplier", header="Supplier"),
+        ColumnSpec("invoice", header="Invoice No"),
+        ColumnSpec("amount", header="Amount"),
+    ),
+    pages=(1, 2, 3),
+)
+
+sync = LedgerSync("ledger.db")
+result = sync.sync(spec, "ledger-2026-11.pdf", version="2026-11-01")
+for change in result.changes:
+    print(change.kind, change.key, change.old_position, change.new_position)
+```
+
+See [docs/ledger.md](docs/ledger.md) for the full documentation.
 
 ## Demonstrations
 
